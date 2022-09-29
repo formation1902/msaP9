@@ -30,8 +30,9 @@ def fx_any_user():
         current_user = User(request.form['user_id'])
     except:
         current_user = User(-1)
+    current_user.user_ra = [1,2,3,4,5]
     fp(current_user.toJson())
-    return "received"
+    return render_template('getThemIn.html',current_user=current_user)
     
 
 

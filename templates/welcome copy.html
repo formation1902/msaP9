@@ -10,18 +10,18 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">    </script>
     <style>
 
-        .container-msa {
-            width: 700px;
+        .login-form {
+            width: 340px;
             margin: 50px auto;
-            font-size: 15px;
+              font-size: 15px;
         }
-        .container-msa form {
+        .login-form form {
             margin-bottom: 15px;
             background: #f7f7f7;
             box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
             padding: 30px;
         }
-        .container-msa h2 {
+        .login-form h2 {
             margin: 0 0 15px;
         }
         .form-control, .btn {
@@ -44,54 +44,45 @@
 </head>
 <body>
     <div class="container text-center" style="color:green" rows=10>
-        <h1>La bibliothéque libre MyContent</h1>
+        <h1>La bibliothéque pluriarticleturelle libre</h1>
         <p>Recommendation des articles qui vous interesseraient le plus</p>
         <br />
         <br />
     </div>
-    <div id='what_to_do'>
-            <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()'>
-                Se connecter
-            </button>
-            <button id='sign-up' type="submit" class="btn btn-success" onclick='handleNewUser()'>
-                Nouveau utilisateur
-            </button>
-    </div>
-    
-    <div id='login' class="container-msa" hidden>
-        <form action={{'sendUserInformation'}} method="post">
+   
+      
+    <div class="login-form">
+        <form action="{{sendUserInformation}}" method="post">
             <h2 id='task' class="text-center">Log in</h2>
+            <input type="radio" id="new_user"  name="new_user" class="new_userC" style="width: 1rem;"  onclick='acceptNewUser()'>
+            <label><span>Nouveau utilisateur</span></label>
+            <br/>
+            <p id='brilliant' hidden><b>Tremendous idea to join us</b>!!!</p>
             <div class="form-group">
-                <input id='user_id' name='user_id' type="number" class="form-control"  placeholder="Enter your user_id"  required="required" >
+                <input id='user_id' type="number" class="form-control"  placeholder="Enter your user_id"  required="required" onclick="connectByUserId()">
+            </div>
+            <div id='nu_options' hidden>
+                <label>1. if any preferred Categories</label>
+                <br/>
+                <select id='user_pc1' class="form-select" aria-label="Disabled select example" > 
+                    <option selected>First PC</option>
+                  </select>
+                <select id='user_pc2' class="form-select" aria-label="Disabled select example" > 
+                    <option selected>Second PC</option>
+                  </select>
+                <select id='user_pc3' class="form-select" aria-label="Disabled select example" > 
+                    <option selected>Third PC</option>
+                  </select>
+                  <hr/>
+                  <label>2. if any tolerance grace</label>
+                  <input id='user_tolerance' type="number" class="form-control"  placeholder="tolerance" style="width: 4rem;">
             </div>
             <br/>
             <div class="form-group">
-                <button id='submit_user_id' type="submit" class="btn btn-primary btn-block">Log in</button>
+                <button id='submit' type="submit" class="btn btn-primary btn-block" disabled>Log in</button>
             </div>     
         </form>
     </div>
-
-    <div id='new_user' class="container-msa" hidden>
-        <form action={{'sendUserInformation'}} method="post">    
-            <label>Please, let us know about your preferred categories(:-<!</label>
-            <br/>
-            <select id='user_pc1' name='user_pc1' class="form-select" aria-label="Disabled select example" > 
-                <option selected>First PC</option>
-            </select>
-            <select name='user_pc2' id='user_pc2' class="form-select" aria-label="Disabled select example" > 
-                <option selected>Second PC</option>
-            </select>
-            <select name='user_pc3' id='user_pc3' class="form-select" aria-label="Disabled select example" > 
-                <option selected>Third PC</option>
-            </select>
-            <hr/>
-            <label>Please, we want to know about your region too!!!</label>
-            <input name='user_region' type="text" class="form-control"  placeholder="region" style="width: 4rem;">
-            <br/>
-            <button type="submit" class="btn btn-primary btn-block">Sign up</button>     
-        </form>
-    </div>
-
     <script type='text/javascript'>
         for(i=0;i<461;i++) {
                 $("#user_pc1").append(
@@ -113,15 +104,21 @@
                         })
                 );
         }
-        function letThemIn(){
-            $('#what_to_do').attr('hidden','hidden');
-            $('#login').removeAttr('hidden')
-        }
-        function handleNewUser(){
-            $('#what_to_do').attr('hidden','hidden');
-            $('#new_user').removeAttr('hidden')            
-        }
         function acceptNewUser(the_radio){
+            if (document.getElementById('new_user').waschecked ){
+                document.getElementById('new_user').waschecked=false
+                document.getElementById('new_user').checked=false
+                $("#user_id").removeAttr('hidden');
+                $("#brilliant").attr('hidden','hidden');
+                $("#nu_options").attr('hidden','hidden');
+                $('#submit').html("log in");
+                $('#task').html("Log in")
+
+            }
+            else {
+                console.log('new user');
+                document.getElementById('new_user').waschecked = true;
+                document.getElementById('new_user').checked=true;
                 $("#brilliant").removeAttr('hidden');
                 $("#user_id").attr('hidden','hidden');
                 $("#submit").attr('disabled',false);
@@ -129,6 +126,7 @@
                 $('#task').html("New User")
                 $('#nu_options').removeAttr('hidden')
             }
+        } 
     </script>
     </body>
 </html>

@@ -11,10 +11,14 @@ class User():
             self.tolerance = int(tolerance)
         self.user_ra = []
         self.user_region = -1
+        self.greeting = 'who are you and what are you doing here !!!'
 
     def setUserPreferredCategories(self,user_pcs_as_list):
         self.user_pcs = user_pcs_as_list
         
+    def setUserGreeting(self,greeting):
+            self.greeting = greeting
+                    
     def setUserRA(self,ra_list):
         self.user_ra = ra_list[:5]
         

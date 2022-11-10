@@ -51,7 +51,24 @@ def fx_any_user():
                 print("that's really bad, youre not cooperative atol ==> no", element)
         print("Collected users_pcs ordered list : ",user_pcs)
         current_user.setUserPreferredCategories(user_pcs)
-    current_user.user_ra = [1,2,3,4,5]
+    azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/get_customized_recommended_articles'
+    try:
+        print('\n\n########################sacred message')
+        print("\n\n-----------------------")
+        print('1..................')
+        toto = requests.post(azure_function_API)
+        print('2..................')
+        print(type(toto))
+        print('3..................')
+        res = toto.json()
+        current_user.setUserRA(res['user_ra'])
+        current_user.setUserGreeting(res['greeting'])
+        print(type(res))
+        print('4..................')
+        print("\n\n-----------------------")
+    except:
+        print("We got a pb")
+        pass
     fp(current_user.toJson())
     return render_template('getThemIn.html',current_user=current_user)
     

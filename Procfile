@@ -1,1 +1,1 @@
-web: gunicorn BibliothequeWebApp:app
+web: python  ./BibliothequeWebApp.py

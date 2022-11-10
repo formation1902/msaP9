@@ -51,7 +51,7 @@ def fx_any_user():
                 print("that's really bad, youre not cooperative atol ==> no", element)
         print("Collected users_pcs ordered list : ",user_pcs)
         current_user.setUserPreferredCategories(user_pcs)
-    azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/get_customized_recommended_articles'
+    azure_function_API = 'https://p9-azure-function-apps.azurewebsites.net/api/get_customized_recommended_articles'
     try:
         print('\n\n########################sacred message')
         print("\n\n-----------------------")

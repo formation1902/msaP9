@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Project 7 - Sentiment Analysis Prediction</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"> </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">    </script>
+    <style>
+        .radioButton input[type="radio"]:checked+label {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+        }
+        .myFormBorder {
+            border:thin black solid;
+          }
+    </style>
+</head>
+<body>
+    <div class="container text-center" style="color:green" rows=10>
+        <h1>Sentiment Analysis</h1>
+        <p>Prediction du sentiment associé à un text</p>
+        <br />
+        <br />
+    </div>
+    
+    <div class="container">
+        <h3>Choix du texte à analyser</h3>
+            <form class='radioButton' id='step1_form'>
+                <input type="radio" id="raw_text"  name='first_step' style="width: 6rem;" checked onclick='setUserText()'>
+                    <label><span>Entrer le texte manuellement</span></label>
+                <br/>
+                <input type="radio" id="pt_text" name='first_step' style="width: 6rem;" onclick='hideAllAndInform()'>
+                <label><span rows=5>Random positive tweet</span></label>
+                <br/>
+                <input type="radio" id="nt_text" name='first_step' style="width: 6rem;" onclick='hideAllAndInform()''>
+                <label><span rows=5>Random negative tweet</span></label>
+                <br/>
+                <input type="radio" id="it_text" name='first_step' style="width: 6rem;" onclick='selectTweetById()'>
+                    <label><span rows=5>Specify a Tweet id from database</span></label>
+                <br/>
+            </form>
+
+            <div id='userTextForm' class="col-lg-10 col-md-10 col-sm-10 well">
+                <form action={{'rawUserText'}} method='POST'>
+                    <textarea class="form-control" id="userTextarea" name='user_text' rows="8"></textarea>
+                    <br/>
+                    <input id='submit_user_text' type="submit" value='Send user text' class="btn btn-success" onclick='workWithUserText()'>
+                </form>
+            </div>
+
+            <div id='random_tweet_Form'  hidden>
+                <form action={{'randomTweet'}} method='POST' >
+                    <p class='lead' id='random_tweet_p'>
+                        Nothing to fear
+                    </p>
+                    <br/>
+                    <input type="number" id="tweet_pORn" name='pORn' hidden/>
+                    <button id='submit_random_tweet' type="submit" class="btn btn-success" onclick='workWithRandomTweet()'>
+                        Random tweet
+                    </button>
+                </form>
+            </div>
+
+            <div  id='TweetIdxForm' hidden>
+            <form action={{'selectTweetByIdx'}} method='POST'>
+                <label class="form-label" for="tweet_idx">Enter a tweet index : </label>
+                <input type="number" id="tweet_idx" name='user_index' class="form-control" style="width: 12rem;"/><br>
+                <button id='submit_tweet_idx' type="submit" class="btn btn-success" onclick='sendTweetIDX()'>
+                    Tweet idx
+                </button>
+            </form>
+          </div>
+        </div>
+        <br>
+        <br>
+
+
+        <script type='text/javascript'>
+
+            function setUserText(the_radio){
+                $("#RecapDesPredictions").attr('hidden','hidden');
+                $("#TweetIdxForm").attr('hidden','hidden');
+                $("#random_tweet_Form").attr('hidden','hidden');
+                var textArea = document.getElementById('userTextForm');
+                textArea.removeAttribute('hidden');
+                
+            } 
+
+            function hideAllAndInform(){
+                $("#RecapDesPredictions").attr('hidden','hidden');
+                $("#userTextForm").attr('hidden','hidden');
+                $("#TweetIdxForm").attr('hidden','hidden');
+                var random_positif = document.getElementById('pt_text');
+                var random_negatif = document.getElementById('nt_text');
+                if(random_positif.checked){
+                    var p = document.getElementById('random_tweet_Form');
+                    p.removeAttribute('hidden');
+                    $("#random_tweet_p").text('Un tweet exprimant un sentiment positif sera selectionné');
+                    $("#tweet_pORn").val(0);
+                    console.log($("#tweet_pORn").val())
+                }
+                if(random_negatif.checked) {
+                    var p = document.getElementById('random_tweet_Form');
+                    p.removeAttribute('hidden');
+                    $("#random_tweet_p").text('Un tweet exprimant un sentiment négatif sera selectionné');
+                    $("#tweet_pORn").val(1);
+                    console.log($("#tweet_pORn").val())
+                }
+                
+            }
+
+            function selectTweetById(the_radio){
+                $("#RecapDesPredictions").attr('hidden','hidden');
+                $("#userTextForm").attr('hidden','hidden');
+                $("#random_tweet_Form").attr('hidden','hidden');
+                var setTweetIdx = document.getElementById('TweetIdxForm');
+                setTweetIdx.removeAttribute('hidden');
+            }
+
+            function workWithUserText(){
+                console.log('harba')
+                var tweet_text = document.getElementById("userTextarea").value
+                var toto1 = document.getElementById('userTextForm');
+                toto1.setAttribute('hidden','hidden')
+                $("#waiting_for_love").show();
+                var waiting_for_love = document.getElementById('waiting_for_love');
+                waiting_for_love.removeAttribute('hidden');
+                console.log('garba')
+            }
+
+
+        </script>
+
+
+        <div id='waiting_for_love' hidden class='container'>
+            <div class="spinner-grow text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-secondary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-success" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-danger" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-warning" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-info" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-light" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <div class="spinner-grow text-dark" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+    </body>
+</html>

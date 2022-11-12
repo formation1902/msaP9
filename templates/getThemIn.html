@@ -47,11 +47,23 @@
     <div class="container py-5">
         <div class="row text-center text-green mb-5">
             <div class="col-lg-10 mx-auto">
-                <h1>The calling user identifier : {{current_user.user_id}}</h1>
-                <h1>{{current_user.greeting}}</h1>
-                <h2>Les articles qui peuvent vous interesser le plus : </h2>
+                <h1>{{current_user.greeting}}</h1>                
+                <p>The calling user identifier : {{current_user.user_id}}</p>
             </div>
         </div>
+        <hr/>
+        <div>
+            {% if current_user.user_id==-1 %}
+            <p>Nouveau utilisateur : bonne lecture</p>
+            {% else %}
+            <p>Ravi de vous revoir utilisateur {{current_user.user_id}} : bonne lecture</p>
+            {% endif %}
+        </div>
+        <hr/>
+        <div>
+            <p>{{current_user.user_ra}}</p>
+        </div>
+        <hr/>
         <div class="row">
             <div class="col-lg-8 mx-auto">
                 <ul class="list-group shadow">
@@ -61,7 +73,7 @@
                         <!-- Custom content-->
                         <div class="media align-items-lg-center flex-column flex-lg-row p-3">
                             <div class="media-body order-2 order-lg-1">
-                                <h5 class="mt-0 font-weight-bold mb-2">Article : {{article_id}}</h5>
+                                <h5 class="mt-0 font-weight-bold mb-2">{{article_id}}</h5>
                         </div> <!-- End -->
                     </li> <!-- End -->
                     {% endfor%}

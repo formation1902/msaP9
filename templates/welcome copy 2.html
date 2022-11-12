@@ -43,6 +43,9 @@
     </style>
 </head>
 <body>
+    for(var i of {{elected_categories}}){
+        <p>{{i}}</p>
+    }
     <div class="container text-center" style="color:green" rows=10>
         <h1>La bibliothéque libre MyContent</h1>
         <p>Recommendation des articles qui vous interesseraient le plus</p>
@@ -93,7 +96,7 @@
     </div>
 
     <script type='text/javascript'>
-        for(var i of {{elected_categories}}) {
+        for(var i of {{elected_categories}}){ {
                 $("#user_pc1").append(
                     $('<option>',{
                         value:i,

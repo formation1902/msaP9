@@ -10,12 +10,14 @@ import pickle
 
 the_reader_blacklist = pickle.load(open("cbrs_users_referentiel.pck","rb"))
 
+elected_categories = pickle.load(open("elected_categories.pck","rb"))
+
 app = Flask(__name__,template_folder='templates')
 
 
 @app.route('/')
 def home():
-    return render_template('welcome.html')
+    return render_template('welcome.html',elected_categories=elected_categories)
 
 
 
@@ -52,9 +54,10 @@ def fx_any_user():
             print("------------------------ knowledge ------------------------")
             azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/knowledge-rs'
             userRequestBody = {
-                "region"  : None if current_user.user_region==-1 else current_user.user_region,
+                "region"  : "" if current_user.user_region==-1 else current_user.user_region,
                 "user_pc" : current_user.user_pcs
             }
+            print(userRequestBody)
             toto = requests.post(azure_function_API,json=userRequestBody).content.decode('utf-8')  
     elif current_user.user_id in the_reader_blacklist:
         print("------------------------ CBRS ------------------------")

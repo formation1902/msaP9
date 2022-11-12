@@ -9,6 +9,7 @@ from user import User
 import pickle
 
 the_reader_blacklist = pickle.load(open("cbrs_users_referentiel.pck","rb"))
+
 def fp(*smth):
     print('\n','#'*10)
     print(smth)

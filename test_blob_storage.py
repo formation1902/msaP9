@@ -6,7 +6,10 @@ from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 # os.environ['AZURE_PASSWORD'] = 'Naw.1902'
 # os.environ['AZURE_CLIENT_ID']     = 'b1e27bcf-9136-49b9-9746-1a7550e38fb0'
 # os.environ['AZURE_TENANT_ID']     = '592be489-32f2-4ead-9496-bffb9b5ba379'
-# os.environ['AZURE_CLIENT_SECRET'] = 'noW8Q~rz0OmddFZwKoHdRJpDib_BZA.H_bII5bsw'
+# os.environ['AZURE_CLIENT_SECRET'] = 'qLF8Q~3oPeZpVYdeWMdXo5Lm6DPdNpK7YnEKEage'
+
+
+
 
 connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
 print(connect_str)

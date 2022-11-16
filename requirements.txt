@@ -2,4 +2,4 @@ flask
 gunicorn
 requests
 numpy
-azure.storage
+azure-storage-blob

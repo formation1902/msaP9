@@ -3,15 +3,38 @@
 #
 #!/usr/bin/python
 from flask import Flask,render_template,url_for,request
+from azure.storage.blob import BlobServiceClient
 import requests
 import os,io,json
 from user import User
 import pickle
 
-the_reader_blacklist = pickle.load(open("cbrs_users_referentiel.pck","rb"))
+# the_reader_blacklist = pickle.load(open("cbrs_users_referentiel.pck","rb"))
 
-elected_categories = pickle.load(open("elected_categories.pck","rb"))
+# elected_categories = pickle.load(open("elected_categories.pck","rb"))
 
+def get_data(fakeString=""):
+    connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+    try:
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        container_client = blob_service_client.get_container_client(container="an-existing-container") 
+        download_file_path_1 = "./" +str(fakeString) +"cbrs_users_referentiel.pck" 
+        with open(file=download_file_path_1, mode="wb") as download_file:
+            download_file.write(container_client.download_blob('cbrs_users_referentiel.pck').readall())
+            
+        download_file_path_2 = "./"+str(fakeString) +"elected_categories.pck" 
+        with open(file=download_file_path_2, mode="wb") as download_file:
+            download_file.write(container_client.download_blob('elected_categories.pck').readall())
+        
+        return pickle.load(open(download_file_path_1,"rb")),pickle.load(open(download_file_path_2,"rb"))
+    except Exception as ex:
+        print('Exception:')
+        print(ex)
+        return "Don't you know ? You and I, we got a probleme !"
+
+the_reader_blacklist, elected_categories = get_data()
+
+print(the_reader_blacklist[:5])
 app = Flask(__name__,template_folder='templates')
 
 
@@ -59,26 +82,34 @@ def fx_any_user():
             }
             print(userRequestBody)
             toto = requests.post(azure_function_API,json=userRequestBody).content.decode('utf-8')  
-    elif current_user.user_id in the_reader_blacklist:
-        print("------------------------ CBRS ------------------------")
-        azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/cbrs'
-        userRequestBody = json.dumps({
-            "user_id" : current_user.user_id
-        })
-        toto = requests.post(azure_function_API,userRequestBody).content.decode('utf-8')
+        #
+        # 
+        #
+        res = json.loads(toto)
+        current_user.setUserRA(eval(res['result']))
+        current_user.setUserGreeting(res['description'])
     else:
         print("------------------------ CFRS ------------------------")
         azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/cfrs'
         userRequestBody = {
             "user_id" : current_user.user_id
         }
-        toto = requests.post(azure_function_API,json=userRequestBody).content.decode('utf-8')
+        toto_cfrs = requests.post(azure_function_API,json=userRequestBody).content.decode('utf-8')
+        res = json.loads(toto_cfrs)
+        current_user.setUser_cfrs(eval(res['result']))
+        current_user.setUserGreeting(res['description'])
+        if current_user.user_id in the_reader_blacklist:
+            current_user.set_as_specialist()
+            print("------------------------ CBRS ------------------------")
+            azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/cbrs'
+            userRequestBody = json.dumps({
+                "user_id" : current_user.user_id
+            })
+            toto_cbrs = requests.post(azure_function_API,userRequestBody).content.decode('utf-8')
+            res = json.loads(toto_cbrs)
+            current_user.setUser_cbrs(eval(res['result']))
+            current_user.addUserGreeting(res['description'])
     
-    
-    res = json.loads(toto)
-    
-    current_user.setUserRA(eval(res['result']))
-    current_user.setUserGreeting(res['description'])
     
     return render_template('getThemIn.html',current_user=current_user)
     

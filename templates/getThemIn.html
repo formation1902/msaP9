@@ -43,44 +43,82 @@
     </style>
 </head>
 <body>
-   
+    <div class="container text-center" style="color:green" rows=10>
+        <h1>La bibliothéque libre MyContent</h1>
+        <p>Recommendation des articles qui vous interesseraient le plus</p>
+        <br />
+        <br />
+    </div>
     <div class="container py-5">
-        <div class="row text-center text-green mb-5">
-            <div class="col-lg-10 mx-auto">
-                <h1>{{current_user.greeting}}</h1>                
-                <p>The calling user identifier : {{current_user.user_id}}</p>
-            </div>
-        </div>
         <hr/>
         <div>
             {% if current_user.user_id==-1 %}
             <p>Nouveau utilisateur : bonne lecture</p>
             {% else %}
             <p>Ravi de vous revoir utilisateur {{current_user.user_id}} : bonne lecture</p>
+            {% if current_user.is_a_specialist %}
+            <p>Lecteur specialisée</p>
+            {%endif%}
             {% endif %}
         </div>
         <hr/>
         <div>
-            <p>{{current_user.user_ra}}</p>
+            {% if current_user.user_id==-1 %}
+            <p>{{current_user.greeting}} : {{current_user.user_ra}}</p>
+            {% endif %}
+            {% if current_user.user_ra_cfrs %}
+            <p>{{current_user.greeting[0]}} : {{current_user.user_ra_cfrs}}</p>
+            {% endif %}
+            {% if current_user.user_ra_cbrs %}
+            <p>{{current_user.greeting[1]}} : {{current_user.user_ra_cbrs}}</p>
+            {% endif %}
         </div>
-        <hr/>
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <ul class="list-group shadow">
-                    <!-- list group item-->
-                    {% for article_id in current_user.user_ra %}
-                    <li class="list-group-item">
-                        <!-- Custom content-->
-                        <div class="media align-items-lg-center flex-column flex-lg-row p-3">
-                            <div class="media-body order-2 order-lg-1">
-                                <h5 class="mt-0 font-weight-bold mb-2">{{article_id}}</h5>
-                        </div> <!-- End -->
-                    </li> <!-- End -->
-                    {% endfor%}
-                </ul> <!-- End -->
-            </div>
-        </div>
-    </div>
+        
 
+        {% if current_user.user_id!=-1 %}
+        <hr />
+            {% if current_user.user_ra_cbrs %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Les 5 articles recommandés dans votre spécialité
+                    </button>
+                    <div class="dropdown-menu">
+                            {% for article_id in current_user.user_ra_cbrs %}
+                            <a class=""dropdown-item"">
+                                <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                                    <div class="media-body order-2 order-lg-1">
+                                        <h5 class="mt-0 font-weight-bold mb-2">
+                                            {{article_id}}
+                                        </h5>
+                                    </div>
+                                </div> <!-- End -->
+                            </a> <!-- End -->
+                            <div class="dropdown-divider"></div>
+                            {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Les 5 articles recommandés dans d'autres horizons 
+                </button>
+                <div class="dropdown-menu">
+                        {% for article_id in current_user.user_ra_cfrs %}
+                        <a class=""dropdown-item"">
+                            <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                                <div class="media-body order-2 order-lg-1">
+                                    <h5 class="mt-0 font-weight-bold mb-2">
+                                        {{article_id}}
+                                    </h5>
+                                </div>
+                            </div> <!-- End -->
+                        </a> <!-- End -->
+                        <div class="dropdown-divider"></div>
+                        {% endfor %}
+                </div>
+            </div>
+        {% endif%}
+        <hr />
+    </div>
     </body>
 </html>

@@ -1,0 +1,34 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "userRequest",
+      "methods": ["post"]
+    },
+    {
+      "type":       "http",
+      "direction":  "out",
+      "name":       "$return"
+    },
+    {
+      "type":       "blob",
+      "name":       "regionRS",
+      "dataType" :  "binary",
+      "path":       "an-existing-container/region_top_articles.csv",
+      "connection": "AzureWebJobsStorage",
+      "direction":  "in"
+    },
+    {
+      "type":       "blob",
+      "name":       "categoryRS",
+      "dataType":   "binary",
+      "path":       "an-existing-container/category_top_articles.csv",
+      "connection": "AzureWebJobsStorage",
+      "direction":  "in"
+    }
+  ]
+}

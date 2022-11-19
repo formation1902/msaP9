@@ -1,0 +1,25 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "userRequest",
+      "methods": ["post"]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    },
+    {
+      "type": "blob",
+      "name": "popularRSfile",
+      "dataType" : "binary",
+      "path": "an-existing-container/popular_articles.csv",
+      "connection": "AzureWebJobsStorage",
+      "direction": "in"
+    }
+  ]
+}

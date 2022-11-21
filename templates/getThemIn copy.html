@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Project 9 - Recommandation du contenu</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"> </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">    </script>
+    <style>
+
+        .container-msa {
+            width: 340px;
+            margin: 50px auto;
+            font-size: 15px;
+        }
+        .container-msa form {
+            margin-bottom: 15px;
+            background: #f7f7f7;
+            box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+        .container-msa h2 {
+            margin: 0 0 15px;
+        }
+        .form-control, .btn {
+            min-height: 38px;
+            border-radius: 2px;
+        }
+        .btn {        
+            font-size: 15px;
+            font-weight: bold;
+        }
+        .radioButton input[type="radio"]:checked+label {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+        }
+        .myFormBorder {
+            border:thin black solid;
+          }
+    </style>
+</head>
+<body>
+    <div class="container text-center" style="color:green" rows=10>
+        <h1>La bibliothéque libre MyContent</h1>
+        <p>Recommendation des articles qui vous interesseraient le plus</p>
+        <br />
+        <br />
+    </div>
+    <div class="container py-5">
+        <hr/>
+        <div>
+            {% if current_user.user_id==-1 %}
+            <p>Nouveau utilisateur : bonne lecture</p>
+            {% else %}
+            <p>Ravi de vous revoir utilisateur {{current_user.user_id}} : bonne lecture</p>
+            {% if current_user.is_a_specialist %}
+            <p>Lecteur specialisée</p>
+            {%endif%}
+            {% endif %}
+        </div>
+        <hr/>
+        <div>
+            {% if current_user.user_id==-1 %}
+            <p>{{current_user.greeting}} : {{current_user.user_ra}}</p>
+            {% endif %}
+            {% if current_user.user_ra_cfrs %}
+            <p>{{current_user.greeting[0]}} : {{current_user.user_ra_cfrs}}</p>
+            {% endif %}
+            {% if current_user.user_ra_cbrs %}
+            <p>{{current_user.greeting[1]}} : {{current_user.user_ra_cbrs}}</p>
+            {% endif %}
+        </div>
+        
+
+        {% if current_user.user_id!=-1 %}
+        <hr />
+            {% if current_user.user_ra_cbrs %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Les 5 articles recommandés dans votre spécialité
+                    </button>
+                    <div class="dropdown-menu">
+                            {% for article_id in current_user.user_ra_cbrs %}
+                            <a class=""dropdown-item"">
+                                <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                                    <div class="media-body order-2 order-lg-1">
+                                        <h5 class="mt-0 font-weight-bold mb-2">
+                                            {{article_id}}
+                                        </h5>
+                                    </div>
+                                </div> <!-- End -->
+                            </a> <!-- End -->
+                            <div class="dropdown-divider"></div>
+                            {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Les 5 articles recommandés dans d'autres horizons 
+                </button>
+                <div class="dropdown-menu">
+                        {% for article_id in current_user.user_ra_cfrs %}
+                        <a class=""dropdown-item"">
+                            <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                                <div class="media-body order-2 order-lg-1">
+                                    <a href={{'add_user_article_click'}}>
+                                        <input type="button" value={{article_id}} >
+                                    </a>
+                                </div>
+                            </div> <!-- End -->
+                        </a> <!-- End -->
+                        <div class="dropdown-divider"></div>
+                        {% endfor %}
+                </div>
+            </div>
+        {% endif%}
+        <hr />
+    </div>
+    <div id='seeYousoon' class="container-msa">
+        <form action={{'byebye'}} method="post">    
+            <button type="submit" class="btn btn-primary btn-block">Se deconnecter</button>     
+        </form>
+    </div>
+    </body>
+</html>

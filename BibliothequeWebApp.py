@@ -10,7 +10,8 @@ from user import User
 # On recupere les donnes de stockage azure :
 #
 try:
-    connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+    # connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+    connect_str = "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=p9azurefunctionapp;AccountKey=nT3CNIBuBcl9K2U96LSWiNLQjKwLzbZq13g3aCAWNaYZACAhgcHVygb1Vzb2yYmSzS+fUKpG5MqL+AStQLRHoA==;BlobEndpoint=https://p9azurefunctionapp.blob.core.windows.net/;FileEndpoint=https://p9azurefunctionapp.file.core.windows.net/;QueueEndpoint=https://p9azurefunctionapp.queue.core.windows.net/;TableEndpoint=https://p9azurefunctionapp.table.core.windows.net/"
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     container_client = blob_service_client.get_container_client(container="an-existing-container") 
 except:

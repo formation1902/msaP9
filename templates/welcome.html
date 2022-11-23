@@ -46,9 +46,12 @@
     <div class="container text-center" style="color:green" rows=10>
         <h1>La bibliothéque libre MyContent</h1>
         <p>Recommendation des articles qui vous interesseraient le plus</p>
+        <p>Le cache manager : {{cache_manager_status['msg']}}</p>
+        <p>Le nombre d'articles : {{cache_manager_status['published_articles']}}</p>
         <br />
         <br />
     </div>
+    {% if cache_manager_status['published_articles'] != -1 %}
     <div id='what_to_do'>
             <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()'>
                 Se connecter
@@ -60,7 +63,7 @@
             <h2>Acces administrateur</h2>
             {% if lockana %}
                 <button id='new_article' type="submit" class="btn btn-success" onclick='PublishNewArticle()' disabled>
-                    <label center style="font-size:25px;">Publier un lots de nouveaux articles {{lockana}}</label>
+                    <label center style="font-size:15px;">Publier un lots de nouveaux articles</label>
                     <br>
                     <label style="color:darkblue;font-size:20px;">Une operation d'ajout semble avoir deja ete initiée et non terminee</label>
                     <hr/>
@@ -68,7 +71,7 @@
                 </button>
             {% else %}
                 <button id='new_article' type="submit" class="btn btn-success" onclick='PublishNewArticle()'>
-                    <label  style="font-size:25px;">Publier un lots de nouveaux articles {{lockana}}</label>
+                    <label  style="font-size:15px;">Publier un lots de nouveaux articles {{lockana}}</label>
                     <hr/>
                     <label style="color:darkblue;font-size:20px;"> Push to publish</label>
                 </button>
@@ -144,6 +147,7 @@
         <p>{{toto}}</p>
         {% endif %}
     </div>
+    {% endif %}
     <script type='text/javascript'>
         for(var i of {{nouveaux_articles}}) {
             $("#article_name").append(

@@ -191,7 +191,8 @@
         <hr />
     </div>
     <div id='seeYousoon' class="container-msa">
-        <form action={{'byebye'}} method="post">    
+        <form action={{'seeYousoonWewillCookSomeRecommendationForYouAndOnlyYou'}} method="post">  
+            <input type='number' value={{current_user.user_id}} name='user_id' hidden>  
             <button type="submit" class="btn btn-primary btn-block">Se deconnecter</button>     
         </form>
     </div>

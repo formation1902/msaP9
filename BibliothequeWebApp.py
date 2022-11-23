@@ -48,17 +48,28 @@ def get_data(fakeString=""):
         return pickle.load(open(download_file_path_1,"rb")),pickle.load(open(download_file_path_2,"rb")),nouveaux_articles_non_publies,known_users,consulted_articles
 
 #
-#
+# - the_reader_blacklist : les lecteurs specialisées
+# - elected_categories   : les categoris promues (par default all)
+# - nouveaux_articles_non_publies : selection de quelques articles retirees pour etre republier
+# - known_users : les lecteurs references
+# - consuted_articles : les articles publiees consultees
 #
 the_reader_blacklist, elected_categories,nouveaux_articles_non_publies,known_users,consulted_articles = get_data()
-User.init(known_users)
-already_added = []
 print(the_reader_blacklist[:5])
-app = Flask(__name__,template_folder='templates')
-user_new_terminated_sessions = {}
-update_cfrs_activated = True
+
+###########################################
+###########################################
+#
+# Parametres pour l'application FLASK
+#
+###########################################
+User.init(known_users)
+update_cfrs_activated = False
 current_users = {}
-lock_operation_ajout_en_cours = True
+already_added = []
+user_new_terminated_sessions = {}
+lock_operation_ajout_en_cours = False
+closed_sessions = []
 
 
 class userArticle():
@@ -66,63 +77,77 @@ class userArticle():
         self.article_id     = article_id
         self.article_has_never_been_consulted = article_has_never_been_consulted
 
-class Article(BaseModel):
-    article_id: int
-    class Config:
-        arbitrary_types_allowed = True
-    article_vector: np.ndarray = Field(default_factory=lambda: np.zeros(shape=75).reshape(-1,75))
+
     
-    
+app = Flask(__name__,template_folder='templates')    
+cache_manager_url = 'http://0.0.0.0:8878'  # local
+cache_manager_url = 'http://0.0.0.0:20100' # docker local
+cache_manager_url = 'https://msap9-cm001.azurewebsites.net/' # docker webapp service on azure 
+
+
+def get_cache_manager_status():
+    res = requests.get(cache_manager_url + '/pingFromBibliothque')
+    print(res)
+    print(res.content)
+    return json.loads(res.content)
+
+sorry_about_it = {'msg':'trying to join the cache manager. this can take a while','published_articles':-1}
+cache_manager_status = sorry_about_it
+
+
+
 @app.route('/')
 def home():
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated)
+    #
+    # ping vers le cache manager et recuperation du nombre d'articles publiées 
+    # ---> on l'utiliser pour de la marketing 
+    # ---> mais nous permettra aussi de verifier l'ajour de nouveaux articles 
+    #
+    global cache_manager_status
+    try:
+        cache_manager_status=get_cache_manager_status()
+    except:
+        cache_manager_url = sorry_about_it
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+
+def record_new_visiteur(current_user):
+    global current_users
+    current_users[str(current_user.user_id)] = current_user
 
 
 ###################################################################################
 ###################################################################################
 #
-#  Ajout d'un lots de nouveaux articles à publier - maj cbrs
+#  Ajout d'un lots de nouveaux articles à publier - avec maj cbrs
 #
 ###################################################################################
 
-
-@app.route('/unlock_add_new_article',methods=['POST'])
-def fx_unlock_add_new_articles():
-    global lock_operation_ajout_en_cours
-    assert lock_operation_ajout_en_cours,"Une incoherence de la gestion du verrou ajout new articles"
+# @app.route('/unlock_add_new_article',methods=['POST'])
+# def fx_unlock_add_new_articles():
+#     global lock_operation_ajout_en_cours
+#     assert lock_operation_ajout_en_cours,"Une incoherence dans la gestion du verrou ajout new articles"
 
 @app.route('/PublishNewArticles',methods=['POST'])
 def fx_publish_brand_new_article():
-    global lock_operation_ajout_en_cours
+    global lock_operation_ajout_en_cours,cache_manager_status
     if not lock_operation_ajout_en_cours:
         lock_operation_ajout_en_cours = True
     articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
     print("Les articles : ",articles_ids)
     
-    cache_manager_url = 'http://0.0.0.0:8879/publier_un_nouveau_article:'+str(article_ids)
-    toto = requests.post(cache_manager_url)
+    cm_url = cache_manager_url + '/publier_des_nouveaux_articles'
+    print('request url = ',cm_url)
+    toto = requests.post(cm_url,json={'articles_ids':articles_ids})
     print("5...............")
-    nouveaux_articles_non_publies.drop(article_id,inplace=True)
+    nouveaux_articles_non_publies.drop(articles_ids,inplace=True)
     print(type(toto))
     print(type(toto.content))
     print(toto.content.decode('utf-8'))
     
     lock_operation_ajout_en_cours = False
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated)
+    cache_manager_status=get_cache_manager_status()
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
-
-
-@app.route('/byebye',methods=['POST'])
-def fx_byebye():
-    #
-    # on envois la session ainsi terminée au service cache-manager
-    # 
-    print("On envois les infos de la session au cache-manager : ")
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated)
-
-def handle_new_visiteur(current_user):
-    global current_users
-    current_users[str(current_user.user_id)] = current_user
 
 
 @app.route('/sendUserInformation',methods=['POST'])
@@ -235,7 +260,7 @@ def fx_any_user():
             
             current_user.setUserGreeting(res['description'])
     
-    handle_new_visiteur(current_user)
+    record_new_visiteur(current_user)
     return render_template('getThemIn.html',current_user=current_user)
 
 ###################################################################################
@@ -261,9 +286,25 @@ def fx_add_user_article_click():
 
 
 
+@app.route('/seeYousoonWewillCookSomeRecommendationForYouAndOnlyYou',methods=['POST'])
+def fx_seeYouSoon():
+    global current_users,closed_sessions,cache_manager_status
+    #
+    # on envois la session ainsi terminée au service cache-manager
+    # 
+    closed_sessions.append({'user_id' : request.form['user_id'], 'incomes' : current_users[request.form['user_id']].getUserSessionInteractions()})
+    current_users.pop(request.form['user_id'])
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+
+
+
 import time
 @app.route('/cfrs_watcher',methods=['POST','GET'])
 def moulinette_to_update_cfrs():
+    #
+    # Integration des nouvelles interactions utilisateurs uniquement pour le cfrs
+    # - Les populars et knowldeges sont des condamnées à attendre le lendemain
+    #
     print("La moulinette est lancée - ")
     update_cfrs_activated = True
     while True:

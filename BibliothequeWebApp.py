@@ -64,9 +64,11 @@ update_cfrs_activated = False
 current_users = {}
 already_added = []
 user_new_terminated_sessions = {}
-lock_operation_ajout_en_cours = False
 closed_sessions = []
 
+lock_operation_ajout_en_cours = False
+if os.path.exists('toto.txt'):
+    os.remove('toto.txt')
 
 class userArticle():
     def __init__(self,article_id,article_has_never_been_consulted):
@@ -126,8 +128,12 @@ def record_new_visiteur(current_user):
 @app.route('/PublishNewArticles',methods=['POST'])
 def fx_publish_brand_new_article():
     global lock_operation_ajout_en_cours,cache_manager_status
-    if not lock_operation_ajout_en_cours:
+    if not os.path.exists('toto.lock'):
+        with open('toto.txt','w') as f:
+            f.write("un message indiquant operation en cours")
         lock_operation_ajout_en_cours = True
+    # if not lock_operation_ajout_en_cours:
+    #     lock_operation_ajout_en_cours = True
     articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
     print("Les articles : ",articles_ids)
     
@@ -141,6 +147,7 @@ def fx_publish_brand_new_article():
     print(toto.content.decode('utf-8'))
     
     lock_operation_ajout_en_cours = False
+    os.remove('toto.txt')
     cache_manager_status=get_cache_manager_status()
     return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 

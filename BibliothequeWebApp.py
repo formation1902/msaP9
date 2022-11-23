@@ -66,9 +66,6 @@ already_added = []
 user_new_terminated_sessions = {}
 closed_sessions = []
 
-lock_operation_ajout_en_cours = False
-if os.path.exists('toto.txt'):
-    os.remove('toto.txt')
 
 class userArticle():
     def __init__(self,article_id,article_has_never_been_consulted):
@@ -80,7 +77,7 @@ class userArticle():
 app = Flask(__name__,template_folder='templates')    
 cache_manager_url = 'http://0.0.0.0:8878'  # local
 cache_manager_url = 'http://0.0.0.0:20100' # docker local
-cache_manager_url = 'https://msap9-cm001.azurewebsites.net/' # docker webapp service on azure 
+cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
 
 
 def get_cache_manager_status():
@@ -120,20 +117,33 @@ def record_new_visiteur(current_user):
 #
 ###################################################################################
 
-# @app.route('/unlock_add_new_article',methods=['POST'])
-# def fx_unlock_add_new_articles():
-#     global lock_operation_ajout_en_cours
-#     assert lock_operation_ajout_en_cours,"Une incoherence dans la gestion du verrou ajout new articles"
+def setLock():
+    os.environ['global_lock_shared_by_workers'] = 'operation en cours!'
+
+def releaseLock():
+    os.environ['global_lock_shared_by_workers'] = 'toto'
+    
+def isLocked():
+    return os.getenv('global_lock_shared_by_workers') == 'operation en cours!'
+
+try:
+    smth = os.getenv('global_lock_shared_by_workers')
+    lock_operation_ajout_en_cours = isLocked()
+except:
+    releaseLock()
+    lock_operation_ajout_en_cours=False
+    pass
+
+print('-------------->',lock_operation_ajout_en_cours)
+
+    
 
 @app.route('/PublishNewArticles',methods=['POST'])
 def fx_publish_brand_new_article():
     global lock_operation_ajout_en_cours,cache_manager_status
-    if not os.path.exists('toto.lock'):
-        with open('toto.txt','w') as f:
-            f.write("un message indiquant operation en cours")
-        lock_operation_ajout_en_cours = True
-    # if not lock_operation_ajout_en_cours:
-    #     lock_operation_ajout_en_cours = True
+    if not lock_operation_ajout_en_cours:
+        setLock()   
+        lock_operation_ajout_en_cours = isLocked()         
     articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
     print("Les articles : ",articles_ids)
     
@@ -146,8 +156,12 @@ def fx_publish_brand_new_article():
     print(type(toto.content))
     print(toto.content.decode('utf-8'))
     
-    lock_operation_ajout_en_cours = False
-    os.remove('toto.txt')
+    
+    releaseLock()
+    lock_operation_ajout_en_cours = isLocked()
+    print('\n\nafter------------------> lock : ',os.getenv('global_lock_shared_by_workers'))
+    print('after------------------> lock : ',lock_operation_ajout_en_cours)
+    
     cache_manager_status=get_cache_manager_status()
     return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 

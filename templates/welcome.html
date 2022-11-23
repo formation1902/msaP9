@@ -51,6 +51,9 @@
         <br />
         <br />
     </div>
+    <div>
+        <h1>{{lockana}}
+    </div>
     {% if cache_manager_status['published_articles'] != -1 %}
     <div id='what_to_do'>
             <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()'>
@@ -61,9 +64,9 @@
             </button>
             <hr />
             <h2>Acces administrateur</h2>
-            {% if lockana %}
+            {% if lockana == true %}
                 <button id='new_article' type="submit" class="btn btn-success" onclick='PublishNewArticle()' disabled>
-                    <label center style="font-size:15px;">Publier un lots de nouveaux articles</label>
+                    <label center style="font-size:15px;">Publier un lots de nouveaux articles : {{lockana}}</label>
                     <br>
                     <label style="color:darkblue;font-size:20px;">Une operation d'ajout semble avoir deja ete initiée et non terminee</label>
                     <hr/>

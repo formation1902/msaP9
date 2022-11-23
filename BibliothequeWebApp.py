@@ -1,9 +1,5 @@
-#
-# Hihihihihi, fot gitting activitiez
-#
 #!/usr/bin/python
-from flask import Flask,render_template,url_for,request
-from pydantic import BaseModel,Field
+from flask import Flask,render_template,request
 import requests
 import os,io,json,pickle
 import pandas as pd
@@ -91,7 +87,7 @@ def get_cache_manager_status():
     print(res.content)
     return json.loads(res.content)
 
-sorry_about_it = {'msg':'trying to join the cache manager. this can take a while','published_articles':-1}
+sorry_about_it = {'msg':'waiting for the cache manager to come up. This can take a while','published_articles':-1}
 cache_manager_status = sorry_about_it
 
 

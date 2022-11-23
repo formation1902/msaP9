@@ -46,9 +46,12 @@
     <div class="container text-center" style="color:green" rows=10>
         <h1>La bibliothéque libre MyContent</h1>
         <p>Recommendation des articles qui vous interesseraient le plus</p>
+        <p>Le cache manager : {{cache_manager_status['msg']}}</p>
+        <p>Le nombre d'articles : {{cache_manager_status['published_articles']}}</p>
         <br />
         <br />
     </div>
+    {% if cache_manager_status['published_articles'] != -1 %}
     <div id='what_to_do'>
             <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()'>
                 Se connecter
@@ -56,6 +59,41 @@
             <button id='sign-up' type="submit" class="btn btn-success" onclick='handleNewUser()'>
                 Nouveau utilisateur
             </button>
+            <hr />
+            <h2>Acces administrateur</h2>
+            {% if lockana %}
+                <button id='new_article' type="submit" class="btn btn-success" onclick='PublishNewArticle()' disabled>
+                    <label center style="font-size:15px;">Publier un lots de nouveaux articles</label>
+                    <br>
+                    <label style="color:darkblue;font-size:20px;">Une operation d'ajout semble avoir deja ete initiée et non terminee</label>
+                    <hr/>
+                    <label style="color:darkblue;font-size:20px;"> No more publications can be authorized</label>
+                </button>
+            {% else %}
+                <button id='new_article' type="submit" class="btn btn-success" onclick='PublishNewArticle()'>
+                    <label  style="font-size:15px;">Publier un lots de nouveaux articles {{lockana}}</label>
+                    <hr/>
+                    <label style="color:darkblue;font-size:20px;"> Push to publish</label>
+                </button>
+                {% endif %}
+            <br>
+            <br>
+            <form action={{'cfrs_watcher'}} method="post">
+                {% if cfrs_update == true %}
+                    <button id='cfrs_watcher_b' type="submit" class="btn btn-success" disabled>
+                        <label center style="font-size:15px;">Demarrer la prise en charge des nouvelles interactions pour les sessions terminées{{cfrs_update}}</label>
+                        <hr/>
+                        <label style="color:darkblue;font-size:20px;">Already activated</label>
+                    </button>
+                {% else %}
+                    <button id='cfrs_watcher_b' type="submit" class="btn btn-success">
+                        <label center>Demarrer la prise en charge des nouvelles interactions pour les sessions terminées{{cfrs_update}}</label>
+                        <hr/>
+                        <label style="color:darkblue;">Push to activate</label>
+                    </button>
+                {% endif %}
+                
+            </form>
     </div>
     
     <div id='login' class="container-msa" hidden>
@@ -92,7 +130,33 @@
         </form>
     </div>
 
+    <div id='push_new_articles' class="container-msa" hidden>
+        <form action={{'PublishNewArticles'}} method="post">    
+            <label style="font-size=30px;">Des articles nouveaux candidats a la publication.</label>
+            <label style="font-size=30px;">Vous pouvez selectionner un nouveau article pour le publier (:-<!</label>
+            <br/>
+            <br/>
+            <select id='article_name' name='article_name' class="form-select" aria-label="Disabled select example" multiple> 
+                <option selected></option>
+            </select>
+            <hr/>
+            <button type="submit" class="btn btn-primary btn-block">Publish now!</button>     
+        </form>
+        <hr/>
+        {% if toto%}
+        <p>{{toto}}</p>
+        {% endif %}
+    </div>
+    {% endif %}
     <script type='text/javascript'>
+        for(var i of {{nouveaux_articles}}) {
+            $("#article_name").append(
+                $('<option>',{
+                    value:i,
+                    text:'article_id == ' + i
+                    })
+            );
+        }
         for(var i of {{elected_categories}}) {
                 $("#user_pc1").append(
                     $('<option>',{
@@ -129,6 +193,10 @@
                 $('#task').html("New User")
                 $('#nu_options').removeAttr('hidden')
             }
+        function PublishNewArticle(the_radio){
+            $('#what_to_do').attr('hidden','hidden');
+            $('#push_new_articles').removeAttr('hidden')
+        }
     </script>
     </body>
 </html>

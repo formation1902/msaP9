@@ -52,30 +52,96 @@
     <div class="container py-5">
         <hr/>
         <div>
-            {% if current_user.user_id==-1 %}
-            <p>Nouveau utilisateur : bonne lecture</p>
+            {% if current_user.is_new_user() %}
+                <p>Nouveau utilisateur : bonne lecture</p>
+                <p>Votre id : {{current_user.user_id}}</p>
             {% else %}
-            <p>Ravi de vous revoir utilisateur {{current_user.user_id}} : bonne lecture</p>
-            {% if current_user.is_a_specialist %}
-            <p>Lecteur specialisée</p>
-            {%endif%}
+                <p>Ravi de vous revoir et bonne lecture</p>
+                <p>Votre id habituel: {{current_user.user_id}}</p>
+                {% if current_user.is_a_specialist %}
+                    <p>Lecteur specialisée</p>
+                {%endif%}
             {% endif %}
         </div>
         <hr/>
         <div>
-            {% if current_user.user_id==-1 %}
-            <p>{{current_user.greeting}} : {{current_user.user_ra}}</p>
+            {% if current_user.is_new_user()%}
+            <p>{{current_user.greeting}} : [
+                {% for ra in current_user.user_ra %}
+                    {% if ra.article_has_never_been_consulted %}
+                        <span style="color:darkblue;font-size:50px">
+                            {{ra.article_id}},
+                        </span>
+                    {% else%}
+                        <span>
+                            {{ra.article_id}},
+                        </span>
+                    {% endif %}
+                {% endfor %}
+                ]
+            </p>
             {% endif %}
             {% if current_user.user_ra_cfrs %}
-            <p>{{current_user.greeting[0]}} : {{current_user.user_ra_cfrs}}</p>
+            <p>{{current_user.greeting[0]}} : [
+                {% for ra in current_user.user_ra_cfrs %}
+                    {% if ra.article_has_never_been_consulted %}
+                        <span style="color:darkblue;font-size:50px">
+                            {{ra.article_id}},
+                        </span>
+                    {% else%}
+                        <span>
+                            {{ra.article_id}},
+                        </span>
+                    {% endif %}
+                {% endfor %}
+                ]
+            </p>
             {% endif %}
             {% if current_user.user_ra_cbrs %}
-            <p>{{current_user.greeting[1]}} : {{current_user.user_ra_cbrs}}</p>
+            <p>{{current_user.greeting[1]}} : [
+                {% for ra in current_user.user_ra_cbrs %}
+                    {% if ra.article_has_never_been_consulted %}
+                        <span style="color:darkblue;font-size:50px">
+                            {{ra.article_id}},
+                        </span>
+                    {% else%}
+                        <span>
+                            {{ra.article_id}},
+                        </span>
+                    {% endif %}
+                {% endfor %}
+                ]
+            </p>
             {% endif %}
         </div>
         
+        {% if current_user.is_new_user() %}
+        <hr />
+        <div class="btn-group">
+            <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Les 5 articles les plus populaires qui vous interesseraient le plus
+            </button>
+            <div class="dropdown-menu">
+                {% for article in current_user.user_ra %}
+                <a class=""dropdown-item"">
+                    <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                        <div class="media-body order-2 order-lg-1">
+                            <form method="post" action="{{'add_user_article_click'}}">
+                                <input type='number' value={{current_user.user_id}} name='user_id' hidden>
+                                <input type='number' value={{article.article_id}} name='article_id' hidden>
+                                <input type="submit" class="btn btn-primary btn-block" value={{article.article_id}}></input>     
+                            </form>
+                        </div>
+                    </div> <!-- End -->
+                </a> <!-- End -->
+                <div class="dropdown-divider"></div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
 
-        {% if current_user.user_id!=-1 %}
+        {% if not current_user.is_new_user() %}
         <hr />
             {% if current_user.user_ra_cbrs %}
                 <div class="btn-group">
@@ -83,13 +149,15 @@
                         Les 5 articles recommandés dans votre spécialité
                     </button>
                     <div class="dropdown-menu">
-                            {% for article_id in current_user.user_ra_cbrs %}
+                            {% for article in current_user.user_ra_cbrs %}
                             <a class=""dropdown-item"">
                                 <div class="media align-items-lg-center flex-column flex-lg-row p-3">
                                     <div class="media-body order-2 order-lg-1">
-                                        <h5 class="mt-0 font-weight-bold mb-2">
-                                            {{article_id}}
-                                        </h5>
+                                        <form method="post" action="{{'add_user_article_click'}}">
+                                            <input type='number' value={{current_user.user_id}} name='user_id' hidden>
+                                            <input type='number' value={{article.article_id}} name='article_id' hidden>
+                                            <input type="submit" class="btn btn-primary btn-block" value={{article.article_id}}></input>     
+                                        </form>
                                     </div>
                                 </div> <!-- End -->
                             </a> <!-- End -->
@@ -100,25 +168,33 @@
             {% endif %}
             <div class="btn-group">
                 <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Les 5 articles recommandés dans d'autres horizons 
+                    Les 5 articles recommandés qui vous interesseraient le plus 
                 </button>
                 <div class="dropdown-menu">
-                        {% for article_id in current_user.user_ra_cfrs %}
-                        <a class=""dropdown-item"">
-                            <div class="media align-items-lg-center flex-column flex-lg-row p-3">
-                                <div class="media-body order-2 order-lg-1">
-                                    <h5 class="mt-0 font-weight-bold mb-2">
-                                        {{article_id}}
-                                    </h5>
-                                </div>
-                            </div> <!-- End -->
-                        </a> <!-- End -->
+                        {% for article in current_user.user_ra_cfrs %}
+                            <a class="dropdown-item">
+                                <div class="media align-items-lg-center flex-column flex-lg-row p-3">
+                                    <div class="media-body order-2 order-lg-1">
+                                        <form method="post" action="{{'add_user_article_click'}}">
+                                            <input type='number' value={{current_user.user_id}} name='user_id' hidden>
+                                            <input type='number' value={{article.article_id}} name='article_id' hidden>
+                                            <input type="submit" class="btn btn-primary btn-block" value={{article.article_id}}></input>     
+                                        </form>
+                                    </div>
+                                </div> <!-- End -->
+                            </a> <!-- End -->
                         <div class="dropdown-divider"></div>
                         {% endfor %}
                 </div>
             </div>
         {% endif%}
         <hr />
+    </div>
+    <div id='seeYousoon' class="container-msa">
+        <form action={{'seeYousoonWewillCookSomeRecommendationForYouAndOnlyYou'}} method="post">  
+            <input type='number' value={{current_user.user_id}} name='user_id' hidden>  
+            <button type="submit" class="btn btn-primary btn-block">Se deconnecter</button>     
+        </form>
     </div>
     </body>
 </html>

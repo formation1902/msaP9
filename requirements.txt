@@ -1,5 +1,6 @@
 flask
 gunicorn
 requests
+pandas
 numpy
 azure-storage-blob

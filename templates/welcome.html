@@ -134,7 +134,7 @@
     <div id='push_new_articles' class="container-msa" hidden>
         <form action={{'PublishNewArticles'}} method="post">    
             <label style="font-size=30px;">Des articles nouveaux candidats a la publication.</label>
-            <label style="font-size=30px;">Vous pouvez selectionner un nouveau article pour le publier (:-<!</label>
+            <label style="font-size=30px;">Vous pouvez selectionner un ou plusieurs articles pour les publier !</label>
             <br/>
             <br/>
             <select id='article_name' name='article_name' class="form-select" aria-label="Disabled select example" multiple> 
@@ -144,10 +144,19 @@
             <button type="submit" class="btn btn-primary btn-block">Publish now!</button>     
         </form>
         <hr/>
-        {% if toto%}
-        <p>{{toto}}</p>
-        {% endif %}
     </div>
+    {% if toto %}
+        <div>
+            <hr/>
+            <h3>La derniere operation de plublication de nouveaux articles</h3>
+            <p>La liste des articles presentées : {{toto.candidat_article_ids}}</p>
+            <p>La liste des articles ajoutées : {{toto.actual_added_articles_ids}}</p>
+            <p>cache-manager summary : {{toto.msg}}</p>
+        </div>
+    {% else %}
+        <p>There is no historic for an dding articles operation</p>
+    {% endif %}
+        
     {% endif %}
     <script type='text/javascript'>
         for(var i of {{nouveaux_articles}}) {

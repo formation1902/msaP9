@@ -10,8 +10,8 @@ from user import User
 # On recupere les donnes de stockage azure :
 #
 try:
-    # connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
-    connect_str = "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=p9azurefunctionapp;AccountKey=nT3CNIBuBcl9K2U96LSWiNLQjKwLzbZq13g3aCAWNaYZACAhgcHVygb1Vzb2yYmSzS+fUKpG5MqL+AStQLRHoA==;BlobEndpoint=https://p9azurefunctionapp.blob.core.windows.net/;FileEndpoint=https://p9azurefunctionapp.file.core.windows.net/;QueueEndpoint=https://p9azurefunctionapp.queue.core.windows.net/;TableEndpoint=https://p9azurefunctionapp.table.core.windows.net/"
+    connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+    # connect_str = "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=p9azurefunctionapp;AccountKey=nT3CNIBuBcl9K2U96LSWiNLQjKwLzbZq13g3aCAWNaYZACAhgcHVygb1Vzb2yYmSzS+fUKpG5MqL+AStQLRHoA==;BlobEndpoint=https://p9azurefunctionapp.blob.core.windows.net/;FileEndpoint=https://p9azurefunctionapp.file.core.windows.net/;QueueEndpoint=https://p9azurefunctionapp.queue.core.windows.net/;TableEndpoint=https://p9azurefunctionapp.table.core.windows.net/"
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     container_client = blob_service_client.get_container_client(container="an-existing-container") 
 except:
@@ -76,8 +76,8 @@ class userArticle():
 
     
 app = Flask(__name__,template_folder='templates')    
-cache_manager_url = 'http://0.0.0.0:8878'  # local
-cache_manager_url = 'http://0.0.0.0:20100' # docker local
+# cache_manager_url = 'http://0.0.0.0:8878'  # local
+# cache_manager_url = 'http://0.0.0.0:20100' # docker local
 cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
 
 
@@ -91,6 +91,44 @@ sorry_about_it = {'msg':'waiting for the cache manager to come up. This can take
 cache_manager_status = sorry_about_it
 
 
+msaLockFileName = "lock_ana.lock"
+with open(msaLockFileName,"w") as f:
+    f.write('operation en cours')
+
+def set_add_articles_lock():
+    global container_client,msaLockFileName
+    print("-------------------> set called : ",end=" == ")
+    try:
+        with open(msaLockFileName,'rb') as smth:
+            container_client.upload_blob(data=smth,overwrite=False,name=msaLockFileName)
+        print('OK')
+        return True
+    
+    except:
+        print('KO')
+        return False
+
+def release_add_articles_lock():
+    global container_client,msaLockFileName
+    print("-------------------> release called : ",end=" == ")
+    try:
+        container_client.delete_blob(msaLockFileName)
+        print("OK")
+        return True
+    except:
+        print('NOK')
+        return False
+
+def check_add_articles_lock():
+    global container_client,msaLockFileName
+    print("-------------------> check called : ",end=" == ")
+    try:
+        smth = container_client.download_blob(msaLockFileName)
+        print("A lock is here")
+        return True
+    except:
+        print(" No lock")
+        return False
 
 @app.route('/')
 def home():
@@ -104,7 +142,9 @@ def home():
         cache_manager_status=get_cache_manager_status()
     except:
         cache_manager_url = sorry_about_it
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+        
+    lockana = check_add_articles_lock()
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 def record_new_visiteur(current_user):
     global current_users
@@ -117,82 +157,46 @@ def record_new_visiteur(current_user):
 #  Ajout d'un lots de nouveaux articles à publier - avec maj cbrs
 #
 ###################################################################################
-
-def setLock():
-    os.environ['global_lock_shared_by_workers'] = 'operation en cours!'
-
-def releaseLock():
-    os.environ['global_lock_shared_by_workers'] = 'toto'
-    
-def isLocked():
-    return os.getenv('global_lock_shared_by_workers') == 'operation en cours!'
-
-try:
-    smth = os.getenv('global_lock_shared_by_workers')
-    lock_operation_ajout_en_cours = isLocked()
-except:
-    releaseLock()
-    lock_operation_ajout_en_cours=False
-    pass
-
-msaLockFileName = "lock_ana.lock"
-with open(msaLockFileName,"w") as f:
-    f.write('operation en cours')
-
-def set_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        with open(msaLockFileName,'rb') as smth:
-            container_client.upload_blob(data=smth,overwrite=False,name=msaLockFileName)
-        return True
-    except:
-        return False
-
-def release_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        container_client.delete_blob(msaLockFileName)
-        return True
-    except:
-        return False
-
-def check_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        smth = container_client.download_blob(data=smth,overwrite=False,name=msaLockFileName)
-        return True
-    except:
-        return False
+class RetourAddArticles():
+    def __init__(self,candidat_article_ids=None,actual_added_articles_ids=None,msg=None,valid=True):
+        self.candidat_article_ids     = candidat_article_ids
+        self.actual_added_articles_ids= actual_added_articles_ids
+        self.msg                      = msg
+        self.valid                    = valid
+    def __str__(self) -> str:
+        if self.valid :
+            return json.dumps({
+                'candidat_article_ids' : self.candidat_article_ids,
+                'actual_added_articles_ids' : self.actual_added_articles_ids,
+                'msg' : self.msg,
+            })
         
-lock_operation_ajout_en_cours = check_add_articles_lock()
-
-print('-------------->',lock_operation_ajout_en_cours)
-
-    
-
 @app.route('/PublishNewArticles',methods=['POST'])
 def fx_publish_brand_new_article():
-    global lock_operation_ajout_en_cours,cache_manager_status
-    if not check_add_articles_lock():
-        lock_operation_ajout_en_cours = set_add_articles_lock()         
-    articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
-    print("Les articles : ",articles_ids)
-    
-    cm_url = cache_manager_url + '/publier_des_nouveaux_articles'
-    print('request url = ',cm_url)
-    toto = requests.post(cm_url,json={'articles_ids':articles_ids})
-    print("5...............")
-    nouveaux_articles_non_publies.drop(articles_ids,inplace=True)
-    print(type(toto))
-    print(type(toto.content))
-    print(toto.content.decode('utf-8'))
-    
-    
-    release_add_articles_lock()
-    
+    global cache_manager_status
+    print("\n before --------------> check : ",check_add_articles_lock())
+    if not check_add_articles_lock() and set_add_articles_lock():
+        print(" -------------> and now check_add_articles_lock : ",check_add_articles_lock())
+        articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
+        print("Les articles : ",articles_ids)
+        
+        cm_url = cache_manager_url + '/publier_des_nouveaux_articles'
+
+        nouveaux_articles_non_publies.drop(articles_ids,inplace=True)
+        toto = json.loads(requests.post(cm_url,json={'articles_ids':articles_ids}).json())
+        toto = RetourAddArticles(articles_ids,toto['article_ids'],toto['msg'],True)
+        release_add_articles_lock()
+
+    else:
+        toto = RetourAddArticles(valid=False)
+        print(" else check_add_articles_lock : ",check_add_articles_lock())
+        print(" else set_add_articles_lock : ",set_add_articles_lock())
     cache_manager_status=get_cache_manager_status()
     lockana = check_add_articles_lock()
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+    
+    print("Finally lockana : ",lockana)
+    print("Finally : toto = ",toto)
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto,lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 
 

@@ -135,37 +135,6 @@ except:
     lock_operation_ajout_en_cours=False
     pass
 
-msaLockFileName = "lock_ana.lock"
-with open(msaLockFileName,"w") as f:
-    f.write('operation en cours')
-
-def set_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        with open(msaLockFileName,'rb') as smth:
-            container_client.upload_blob(data=smth,overwrite=False,name=msaLockFileName)
-        return True
-    except:
-        return False
-
-def release_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        container_client.delete_blob(msaLockFileName)
-        return True
-    except:
-        return False
-
-def check_add_articles_lock():
-    global container_client,msaLockFileName
-    try:
-        smth = container_client.download_blob(data=smth,overwrite=False,name=msaLockFileName)
-        return True
-    except:
-        return False
-        
-lock_operation_ajout_en_cours = check_add_articles_lock()
-
 print('-------------->',lock_operation_ajout_en_cours)
 
     
@@ -173,8 +142,9 @@ print('-------------->',lock_operation_ajout_en_cours)
 @app.route('/PublishNewArticles',methods=['POST'])
 def fx_publish_brand_new_article():
     global lock_operation_ajout_en_cours,cache_manager_status
-    if not check_add_articles_lock():
-        lock_operation_ajout_en_cours = set_add_articles_lock()         
+    if not lock_operation_ajout_en_cours:
+        setLock()   
+        lock_operation_ajout_en_cours = isLocked()         
     articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
     print("Les articles : ",articles_ids)
     
@@ -188,11 +158,13 @@ def fx_publish_brand_new_article():
     print(toto.content.decode('utf-8'))
     
     
-    release_add_articles_lock()
+    releaseLock()
+    lock_operation_ajout_en_cours = isLocked()
+    print('\n\nafter------------------> lock : ',os.getenv('global_lock_shared_by_workers'))
+    print('after------------------> lock : ',lock_operation_ajout_en_cours)
     
     cache_manager_status=get_cache_manager_status()
-    lockana = check_add_articles_lock()
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto.content.decode('utf-8'),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 
 
@@ -340,8 +312,7 @@ def fx_seeYouSoon():
     # 
     closed_sessions.append({'user_id' : request.form['user_id'], 'incomes' : current_users[request.form['user_id']].getUserSessionInteractions()})
     current_users.pop(request.form['user_id'])
-    lockana = check_add_articles_lock()
-    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lock_operation_ajout_en_cours,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 
 

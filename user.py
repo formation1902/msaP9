@@ -36,7 +36,7 @@ class User():
         self.user_region = -1
         self.greeting = []
         self.is_a_specialist = False
-        self._current_session_consulted_articles = {}
+        self._current_session_consulted_articles = dict()
 
     def recordNewConsultation(self,article_id):
         if article_id in self._current_session_consulted_articles:
@@ -45,7 +45,9 @@ class User():
             self._current_session_consulted_articles[article_id]=1
                                                         
     def getUserSessionInteractions(self):
+        
         return self._current_session_consulted_articles
+    
     def set_as_new_user(self):
         self._new_user = True
     
@@ -83,8 +85,10 @@ class User():
             'user_id':self.user_id,
             'user_region':self.user_region,
             'user_pcs':self.user_pcs,
-            'user_ra':  [str(article.article_id) for article in self.user_ra],
+            'user_ra':  [article.article_id for article in self.user_ra],
             'user_ra_cbrs':[article.article_id for article in self.user_ra_cbrs],
             'user_ra_cfrs':[article.article_id for article in self.user_ra_cfrs],
-            "current_session_consulted_articles" : self._current_session_consulted_articles
+            "current_session_consulted_articles" : json.dumps(self._current_session_consulted_articles)
         })
+    
+            

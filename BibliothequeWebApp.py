@@ -62,7 +62,6 @@ print(the_reader_blacklist[:5])
 #
 ###########################################
 User.init(known_users)
-update_cfrs_activated = False
 current_users = {}
 already_added = []
 user_new_terminated_sessions = {}
@@ -77,9 +76,9 @@ class userArticle():
 
     
 app = Flask(__name__,template_folder='templates')    
-# cache_manager_url = 'http://0.0.0.0:8878'  # local
+cache_manager_url = 'http://0.0.0.0:8878'  # local
 # cache_manager_url = 'http://0.0.0.0:20100' # docker local
-cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
+# cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
 
 
 def get_cache_manager_status():
@@ -91,7 +90,9 @@ def get_cache_manager_status():
 sorry_about_it = {'msg':'waiting for the cache manager to come up. This can take a while','published_articles':-1}
 cache_manager_status = sorry_about_it
 
-
+#
+###################################
+#
 msaLockFileName = "lock_ana.lock"
 with open(msaLockFileName,"w") as f:
     f.write('operation en cours')
@@ -130,6 +131,54 @@ def check_add_articles_lock():
     except:
         print(" No lock")
         return False
+    
+#
+###################################
+#    
+
+msaCFRS_LockFileName = "lock_update_cfrs.lock"
+with open(msaCFRS_LockFileName,"w") as f:
+    f.write('update_cfr_operation en cours')
+
+def set_update_cfrs_lock():
+    global container_client,msaCFRS_LockFileName
+    print("-------------------> set called : ",end=" == ")
+    try:
+        with open(msaCFRS_LockFileName,'rb') as smth:
+            container_client.upload_blob(data=smth,overwrite=False,name=msaCFRS_LockFileName)
+        print('OK')
+        return True
+    
+    except:
+        print('KO')
+        return False
+
+def release_update_cfrs_lock():
+    global container_client,msaCFRS_LockFileName
+    print("-------------------> release called : ",end=" == ")
+    try:
+        container_client.delete_blob(msaCFRS_LockFileName)
+        print("OK")
+        return True
+    except:
+        print('NOK')
+        return False
+
+def check_update_cfrs_lock():
+    global container_client,msaCFRS_LockFileName
+    print("-------------------> check called : ",end=" == ")
+    try:
+        smth = container_client.download_blob(msaCFRS_LockFileName)
+        print("A lock is here")
+        return True
+    except:
+        print(" No lock")
+        return False
+
+update_cfrs_activated =    check_update_cfrs_lock() 
+###############################################################
+###############################################################
+###############################################################
 
 @app.route('/')
 def home():
@@ -145,6 +194,7 @@ def home():
         cache_manager_url = sorry_about_it
         
     lockana = check_add_articles_lock()
+    update_cfrs_activated =    check_update_cfrs_lock() 
     return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 def record_new_visiteur(current_user):
@@ -181,9 +231,10 @@ def fx_publish_brand_new_article():
         articles_ids = [int(article_id) for article_id in request.form.getlist('article_name')]    
         print("Les articles : ",articles_ids)
         
-        cm_url = cache_manager_url + '/publier_des_nouveaux_articles'
-
         nouveaux_articles_non_publies.drop(articles_ids,inplace=True)
+        
+        cm_url = cache_manager_url + '/publier_des_nouveaux_articles'
+        
         toto = json.loads(requests.post(cm_url,json={'articles_ids':articles_ids}).json())
         toto = RetourAddArticles(articles_ids,toto['article_ids'],toto['msg'],True)
         release_add_articles_lock()
@@ -194,7 +245,7 @@ def fx_publish_brand_new_article():
         print(" else set_add_articles_lock : ",set_add_articles_lock())
     cache_manager_status=get_cache_manager_status()
     lockana = check_add_articles_lock()
-    
+    update_cfrs_activated =    check_update_cfrs_lock() 
     print("Finally lockana : ",lockana)
     print("Finally : toto = ",toto)
     return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),toto=toto,lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
@@ -251,7 +302,6 @@ def fx_any_user():
         user_ra_objects = []
         print("\n eevaal ",res['result'])
         for e in eval(res['result']):
-            print("eeeeeeeeeeeeeeee = ",e)
             article_id = int(e)
             article_has_never_been_consulted = not article_id in consulted_articles
             user_ra_objects.append(userArticle(article_id,article_has_never_been_consulted))
@@ -276,7 +326,6 @@ def fx_any_user():
         user_cfrs_objects = []
         print("\n eevaal ",res['result'])
         for e in eval(res['result']):
-            print("eeeeeeeeeeeeeeee = ",e)
             article_id = int(e)
             article_has_never_been_consulted = not article_id in consulted_articles
             user_cfrs_objects.append(userArticle(article_id,article_has_never_been_consulted))
@@ -289,17 +338,21 @@ def fx_any_user():
             current_user.set_as_specialist()
             print("------------------------ CBRS ------------------------")
             azure_function_API = 'https://p9-azurefunctionapp.azurewebsites.net/api/cbrs'
+            print("1.............")
             userRequestBody = json.dumps({
                 "user_id" : current_user.user_id
             })
+            print("2.............")
             toto_cbrs = requests.post(azure_function_API,userRequestBody).content.decode('utf-8')
+            print("3.............")
+            print("toto_cbrs = ",toto_cbrs)
             res = json.loads(toto_cbrs)
-            
+            print("4.............")
             print("\n res = ",res)
+            print("5.............")
             user_cbrs_objects = []
             print("\n eevaal ",res['result'])
             for e in eval(res['result']):
-                print("eeeeeeeeeeeeeeee = ",e)
                 article_id = int(e)
                 article_has_never_been_consulted = not article_id in consulted_articles
                 user_cbrs_objects.append(userArticle(article_id,article_has_never_been_consulted))
@@ -308,8 +361,8 @@ def fx_any_user():
             
             # current_user.setUser_cbrs(eval(res['result']))
             current_user.setUser_cbrs(user_cbrs_objects)
-            
             current_user.setUserGreeting(res['description'])
+    
     
     record_new_visiteur(current_user)
     return render_template('getThemIn.html',current_user=current_user)
@@ -331,8 +384,7 @@ def fx_add_user_article_click():
     print('Current_user  : ',current_users[request.form['user_id']])
     print("\n\n")
     current_users[request.form['user_id']].recordNewConsultation(request.form['article_id'])
-    print("current user == ",current_users[request.form['user_id']].toJson())
-    print("\n\n")
+
     return render_template('getThemIn.html',current_user=current_users[request.form['user_id']])
 
 
@@ -341,37 +393,121 @@ def fx_add_user_article_click():
 def fx_seeYouSoon():
     global current_users,closed_sessions,cache_manager_status
     #
-    # on envois la session ainsi terminée au service cache-manager
+    # On integre les interactions enregistrees dans la session ainsi terminee recue
     # 
+    print("L'utlisateur a cloturee sa session :  ", request.form['user_id'])
+    # print("Here is the recorded incomes : ", current_users[request.form['user_id']].getUserSessionInteractions())
     closed_sessions.append({'user_id' : request.form['user_id'], 'incomes' : current_users[request.form['user_id']].getUserSessionInteractions()})
     current_users.pop(request.form['user_id'])
     lockana = check_add_articles_lock()
+    update_cfrs_activated =    check_update_cfrs_lock() 
+    
+    cache_manager_status=get_cache_manager_status()
+    print("\n\nclosed sessions : ",closed_sessions,"\n\n")
+    
+    return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
+
+
+def convert_closed_sessions_to_pandasDF(closed_sessions):
+    df = pd.DataFrame(columns=['user_id','session_id','session_size','article_id','clicks_n'])
+    vars = ['user_id', 'session_id', 'session_size', 'article_id']
+    session_counter = dict()
+    for session_income in closed_sessions:
+        user_id = session_income['user_id']
+        if user_id in session_counter.keys():
+            session_counter[user_id]+=1
+        else:
+            session_counter[user_id]=1
+        res=pd.DataFrame(columns=['user_id','session_id','article_id','clicks_n'])
+        session_size = 0
+        for a in session_income['incomes']:
+            article_id  = a
+            clicks_n =     session_income['incomes'][a]
+            session_size+=clicks_n
+            for i in range(clicks_n):
+                res = pd.concat([res,pd.DataFrame({'user_id':user_id,'session_id':str(user_id) + '_' +str(session_counter[user_id]),'article_id':article_id,'clicks_n':clicks_n},index=[0])]) 
+        res['session_size'] = session_size
+        df = pd.concat([df,res[['user_id','session_id','session_size','article_id','clicks_n']]])
+    # df.to_csv("myDF.csv")
+    print("The df")
+    print(df)
+    
+    return df[vars]
+
+import time
+@app.route('/cfrs_watcher',methods=['POST'])
+def moulinette_to_update_cfrs():
+    #
+    # Integration des nouvelles interactions utilisateurs uniquement pour le cfrs
+    # - Les populars et knowldeges sont des condamnées à attendre un lendemain
+    global container_client,msaCFRS_LockFileName,closed_sessions
+    if not check_update_cfrs_lock() and set_update_cfrs_lock():
+        #
+        # On envois les dictionnaires au cache-manager pour integration par le CRFS agent!
+        #
+        print("La liste des sessions closes  : ")
+        for sc in closed_sessions:
+            print("\t - ",sc)
+            
+        print("\n\n1...............")
+        
+        # df = pd.DataFrame(columns=['user_id','article_id','clicks_n'])        
+        # for session_income in closed_sessions:
+        #     for article_id,clicks_n in session_income['incomes'].items():
+        #         df = pd.concat(
+        #             [
+        #                 df,
+        #                 pd.DataFrame(
+        #                     {
+        #                         'user_id':session_income['user_id'],
+        #                         'article_id':article_id,
+        #                         'clicks_n':clicks_n
+        #                     },
+        #                     index=[0]
+        #                 )
+        #             ]
+        #         )
+        df = convert_closed_sessions_to_pandasDF(closed_sessions)
+        msaFileName = "new_consultations.csv"
+        df.to_csv(msaFileName,index=False)
+        with open(msaFileName,'rb') as smth:
+            container_client.upload_blob(data=smth,overwrite=True,name=msaCFRS_LockFileName)
+        
+        cm_url = cache_manager_url + '/closed_sessions_incomes'
+
+        
+        toto = requests.get(cm_url)
+        print("toto = ",type(toto))
+        closed_sessions = []
+        msaCondition = False
+        if msaCondition:
+            release_update_cfrs_lock()
+
+    else:
+        print(" else check_update_cfrs_lock : ",check_update_cfrs_lock())
+        
+    cache_manager_status=get_cache_manager_status()
+    lockana = check_add_articles_lock()
+    update_cfrs_activated =    check_update_cfrs_lock() 
+
     return render_template('welcome.html',elected_categories=elected_categories,nouveaux_articles=list(nouveaux_articles_non_publies.index),lockana=lockana,cfrs_update=update_cfrs_activated,cache_manager_status=cache_manager_status)
 
 
 
-import time
-@app.route('/cfrs_watcher',methods=['POST','GET'])
-def moulinette_to_update_cfrs():
-    #
-    # Integration des nouvelles interactions utilisateurs uniquement pour le cfrs
-    # - Les populars et knowldeges sont des condamnées à attendre le lendemain
-    #
-    print("La moulinette est lancée - ")
-    update_cfrs_activated = True
-    while True:
-        if len(user_new_terminated_sessions)>0:
-            #
-            # Envoyer les informations de sessions au cache manager
-            #
-            time.sleep(3600)
-            pass
-        else:
-            #
-            # diminuer l interval de mise a jour
-            #
-            time.sleep(3600)
-            pass
-
+# def convert_closed_sessions_to_pandasDF(closed_sessions):
+#     df = pd.DataFrame(columns=['user_id','session_id','article_id','clicks_n'])
+#     session_counter = dict()
+#     for session_income in closed_sessions():
+#         user_id = session_income['user_id']
+#         if user_id in session_counter.keys():
+#             session_counter[user_id]+=1
+#         else:
+#             session_counter[user_id]=1
+#         for a in session_income['incomes']:
+#             article_id  = a
+#             clicks_n =     session_income['incomes'][a]
+#             pd.concat(df,pd.DataFrame({'user_id':user_id,'session_id':session_counter[user_id],'article_id':article_id,'clicks_n':clicks_n}))
+#     return df
+            
 if __name__ == '__main__':
     app.run(debug=True,port=10100)

@@ -76,9 +76,9 @@ class userArticle():
 
     
 app = Flask(__name__,template_folder='templates')    
-cache_manager_url = 'http://0.0.0.0:8878'  # local
+# cache_manager_url = 'http://0.0.0.0:8878'  # local
 # cache_manager_url = 'http://0.0.0.0:20100' # docker local
-# cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
+cache_manager_url = 'https://msap9-cm001.azurewebsites.net' # docker webapp service on azure 
 
 
 def get_cache_manager_status():

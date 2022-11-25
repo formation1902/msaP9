@@ -54,12 +54,21 @@
 
     {% if cache_manager_status['published_articles'] != -1 %}
     <div id='what_to_do'>
+        {% if current_user %}
+            <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()' disabled>
+                Se connecter
+            </button>
+            <button id='sign-up' type="submit" class="btn btn-success" onclick='handleNewUser()' disabled>
+                Nouveau utilisateur
+            </button>
+        {% else %}
             <button id='sign-in' type="submit" class="btn btn-success" onclick='letThemIn()'>
                 Se connecter
             </button>
             <button id='sign-up' type="submit" class="btn btn-success" onclick='handleNewUser()'>
                 Nouveau utilisateur
             </button>
+            {% endif %}
             <hr />
             <h2>Acces administrateur</h2>
             {% if lockana == true %}
@@ -153,8 +162,6 @@
             <p>La liste des articles ajoutées : {{toto.actual_added_articles_ids}}</p>
             <p>cache-manager summary : {{toto.msg}}</p>
         </div>
-    {% else %}
-        <p>There is no historic for an dding articles operation</p>
     {% endif %}
         
     {% endif %}

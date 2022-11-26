@@ -237,7 +237,7 @@ def fx_publish_brand_new_article():
         
         toto = json.loads(requests.post(cm_url,json={'articles_ids':articles_ids}).json())
         toto = RetourAddArticles(articles_ids,toto['article_ids'],toto['msg'],True)
-        release_add_articles_lock()
+        # release_add_articles_lock()
 
     else:
         toto = RetourAddArticles(valid=False)
